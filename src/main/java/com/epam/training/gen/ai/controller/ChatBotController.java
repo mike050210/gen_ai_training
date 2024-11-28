@@ -1,14 +1,15 @@
 package com.epam.training.gen.ai.controller;
 
 import com.epam.training.gen.ai.model.ChatbotResponse;
+import com.epam.training.gen.ai.model.PromptRequest;
 import com.epam.training.gen.ai.service.PromptService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,25 +26,25 @@ public class ChatBotController {
     /**
      * Simple endpoint to send Azure OpenAI a user prompt.
      *
-     * @param input the user prompt
+     * @param request the user's prompt
      * @return the OpenAI response
      */
-    @GetMapping(value = "/simple-prompt")
-    public ChatbotResponse sendSimplePrompt(@RequestParam String input) {
-        validateInput(input);
-        return promptService.sendSimplePrompt(input);
+    @PostMapping(value = "/simple-prompt")
+    public ChatbotResponse sendSimplePrompt(@RequestBody PromptRequest request) {
+        validateInput(request.input());
+        return promptService.sendSimplePrompt(request.input());
     }
 
     /**
      * Eendpoint to send Azure OpenAI a user prompt with history.
      *
-     * @param input the user prompt
+     * @param request the user's prompt
      * @return the OpenAI response
      */
-    @GetMapping(value = "/prompt-with-history")
-    public ChatbotResponse sendPromptWithHistory(@RequestParam String input) {
-        validateInput(input);
-        return promptService.sendPromptWithHistory(input);
+    @PostMapping(value = "/prompt-with-history")
+    public ChatbotResponse sendPromptWithHistory(@RequestBody PromptRequest request) {
+        validateInput(request.input());
+        return promptService.sendPromptWithHistory(request.input());
     }
 
     private void validateInput(String input) {

@@ -18,6 +18,7 @@ public class PromptService {
     private final ChatCompletionService chatCompletionService;
     private final Kernel kernel;
     private final InvocationContext invocationContext;
+    private final ChatHistory chatHistory;
 
     /**
      * Send a simple prompt to Azure OpenAI.
@@ -44,7 +45,6 @@ public class PromptService {
      * @return the response from the AI Assistant
      */
     public ChatbotResponse sendPromptWithHistory(String userPrompt) {
-        var chatHistory = new ChatHistory();
         var response = kernel.invokeAsync(getKernelTemplate())
                 .withArguments(getKernelFunctionArguments(chatHistory, userPrompt)).block();
 

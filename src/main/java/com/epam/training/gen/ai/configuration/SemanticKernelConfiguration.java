@@ -58,7 +58,9 @@ public class SemanticKernelConfiguration {
     public InvocationContext invocationContext() {
         return InvocationContext.builder()
                 .withPromptExecutionSettings(PromptExecutionSettings.builder()
-                        .withTemperature(clientOpenAiProperties.genAiTemperature())
+                        .withTemperature(clientOpenAiProperties.genAi().temperature())
+                        .withMaxTokens(clientOpenAiProperties.genAi().maxTokens())
+                        .withFrequencyPenalty(clientOpenAiProperties.genAi().frequencyPenalty())
                         .withModelId(clientOpenAiProperties.clientOpenAiDeploymentName())
                         .build())
                 .build();
