@@ -10,5 +10,5 @@ public record ClientOpenAiProperties(
         String clientOpenAiKey,
         String clientOpenAiEndpoint,
         String clientOpenAiDeploymentName,
-        double genAiTemperature) {
+        GenAiSettings genAi) {
 }
