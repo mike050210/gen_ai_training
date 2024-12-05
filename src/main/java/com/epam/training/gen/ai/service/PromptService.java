@@ -1,5 +1,6 @@
 package com.epam.training.gen.ai.service;
 
+import com.azure.ai.openai.OpenAIAsyncClient;
 import com.epam.training.gen.ai.model.ChatbotResponse;
 import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.orchestration.InvocationContext;
@@ -8,29 +9,41 @@ import com.microsoft.semantickernel.semanticfunctions.KernelFunctionArguments;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
 import com.microsoft.semantickernel.services.chatcompletion.ChatHistory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class PromptService {
-    private final ChatCompletionService chatCompletionService;
-    private final Kernel kernel;
+public abstract class PromptService {
     private final InvocationContext invocationContext;
     private final ChatHistory chatHistory;
+    private final OpenAIAsyncClient openAIAsyncClient;
+
+    @Lookup
+    protected abstract ChatCompletionService getChatCompletionService(OpenAIAsyncClient openAIAsyncClient,
+                                                                      String deploymentName);
+
+    @Lookup
+    protected abstract Kernel getKernel(ChatCompletionService chatCompletionService);
 
     /**
      * Send a simple prompt to Azure OpenAI.
      *
      * @param userPrompt prompt send by user
+     * @param model      AI Model to use
      * @return the response from the AI Assistant
      */
-    public ChatbotResponse sendSimplePrompt(String userPrompt) {
+    public ChatbotResponse sendSimplePrompt(String userPrompt, String model) {
         var chatHistory = new ChatHistory();
         chatHistory.addUserMessage(userPrompt);
+        ChatCompletionService chatCompletionService = getChatCompletionService(openAIAsyncClient, model);
+        var response = chatCompletionService
+                .getChatMessageContentsAsync(chatHistory,
+                        getKernel(chatCompletionService),
+                        invocationContext).block();
 
-        var response = chatCompletionService.getChatMessageContentsAsync(chatHistory, kernel, invocationContext).block();
         var message = response.stream()
                 .map(messageContent -> messageContent.getContent())
                 .collect(Collectors.joining("\n"));
@@ -42,10 +55,12 @@ public class PromptService {
      * Send a prompt with history to Azure OpenAI.
      *
      * @param userPrompt prompt send by user
+     * @param model      AI Model to use
      * @return the response from the AI Assistant
      */
-    public ChatbotResponse sendPromptWithHistory(String userPrompt) {
-        var response = kernel.invokeAsync(getKernelTemplate())
+    public ChatbotResponse sendPromptWithHistory(String userPrompt, String model) {
+        var response = getKernel(getChatCompletionService(openAIAsyncClient, model))
+                .invokeAsync(getKernelTemplate())
                 .withArguments(getKernelFunctionArguments(chatHistory, userPrompt)).block();
 
         // Add messages to history

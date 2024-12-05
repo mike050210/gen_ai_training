@@ -9,6 +9,7 @@ import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionServic
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 
 /**
  * Configuration class for setting up Semantic Kernel beans.
@@ -26,12 +27,15 @@ public class SemanticKernelConfiguration {
      * Generates a {@link ChatCompletionService} bean for handling chat completions.
      *
      * @param openAIAsyncClient to communicate with Azure OpenAI
+     * @param deploymentName    model name to use. E.g. ai21.j2-jumbo-instruct, anthropic.claude-v3-5-sonnet,
+     *                          gemini-pro, Llama-3-8B-Instruct, Mixtral-8x7B-Instruct-v0.1, gpt-4-turbo, etc.
      * @return an instance of {@link ChatCompletionService}
      */
     @Bean
-    public ChatCompletionService chatCompletionService(OpenAIAsyncClient openAIAsyncClient) {
+    @Scope(value = "prototype")
+    public ChatCompletionService chatCompletionService(OpenAIAsyncClient openAIAsyncClient, String deploymentName) {
         return OpenAIChatCompletion.builder()
-                .withModelId(clientOpenAiProperties.clientOpenAiDeploymentName())
+                .withModelId(deploymentName)
                 .withOpenAIAsyncClient(openAIAsyncClient)
                 .build();
     }
@@ -43,6 +47,7 @@ public class SemanticKernelConfiguration {
      * @return the {@link Kernel} instance
      */
     @Bean
+    @Scope(value = "prototype")
     public Kernel kernel(ChatCompletionService chatCompletionService) {
         return Kernel.builder()
                 .withAIService(ChatCompletionService.class, chatCompletionService)
