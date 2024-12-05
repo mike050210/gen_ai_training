@@ -32,7 +32,7 @@ public class ChatBotController {
     @PostMapping(value = "/simple-prompt")
     public ChatbotResponse sendSimplePrompt(@RequestBody PromptRequest request) {
         validateInput(request.input());
-        return promptService.sendSimplePrompt(request.input());
+        return promptService.sendSimplePrompt(request.input(), request.model());
     }
 
     /**
@@ -44,7 +44,7 @@ public class ChatBotController {
     @PostMapping(value = "/prompt-with-history")
     public ChatbotResponse sendPromptWithHistory(@RequestBody PromptRequest request) {
         validateInput(request.input());
-        return promptService.sendPromptWithHistory(request.input());
+        return promptService.sendPromptWithHistory(request.input(), request.model());
     }
 
     private void validateInput(String input) {
