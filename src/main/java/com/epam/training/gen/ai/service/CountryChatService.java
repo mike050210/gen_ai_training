@@ -2,54 +2,54 @@ package com.epam.training.gen.ai.service;
 
 import com.azure.ai.openai.OpenAIAsyncClient;
 import com.epam.training.gen.ai.model.ChatbotResponse;
+import com.epam.training.gen.ai.plugin.CountryPlugin;
 import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.orchestration.InvocationContext;
+import com.microsoft.semantickernel.orchestration.InvocationReturnMode;
+import com.microsoft.semantickernel.orchestration.ToolCallBehavior;
+import com.microsoft.semantickernel.plugin.KernelPlugin;
+import com.microsoft.semantickernel.plugin.KernelPluginFactory;
 import com.microsoft.semantickernel.semanticfunctions.KernelFunction;
 import com.microsoft.semantickernel.semanticfunctions.KernelFunctionArguments;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
 import com.microsoft.semantickernel.services.chatcompletion.ChatHistory;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Service;
 
-import java.util.stream.Collectors;
-
+/**
+ * Handles requests from Country info chat.
+ */
 @Service
-@RequiredArgsConstructor
-public abstract class PromptService {
-    private final InvocationContext invocationContext;
-    private final ChatHistory chatHistory;
+public abstract class CountryChatService {
     private final OpenAIAsyncClient openAIAsyncClient;
+    private final ChatHistory chatHistory;
+    private final CountryService countryService;
+
+    private InvocationContext invocationContext;
+
+    private KernelPlugin countryPlugin;
+
+    public CountryChatService(final ChatHistory chatHistory, final OpenAIAsyncClient openAIAsyncClient, final CountryService countryService) {
+        this.chatHistory = chatHistory;
+        this.openAIAsyncClient = openAIAsyncClient;
+        this.countryService = countryService;
+
+        this.invocationContext = new InvocationContext.Builder()
+                .withReturnMode(InvocationReturnMode.LAST_MESSAGE_ONLY)
+                .withToolCallBehavior(ToolCallBehavior.allowAllKernelFunctions(true))
+                .build();
+
+        this.countryPlugin = KernelPluginFactory
+                .createFromObject(new CountryPlugin(this.countryService), "CountryPlugin");
+    }
 
     @Lookup
     protected abstract ChatCompletionService getChatCompletionService(OpenAIAsyncClient openAIAsyncClient,
                                                                       String deploymentName);
 
-    @Lookup("simpleKernelBean")
-    protected abstract Kernel getKernel(ChatCompletionService chatCompletionService);
+    @Lookup("pluginKernelBean")
+    protected abstract Kernel getCountryKernel(ChatCompletionService chatCompletionService, KernelPlugin kernelPlugin);
 
-    /**
-     * Send a simple prompt to Azure OpenAI.
-     *
-     * @param userPrompt prompt send by user
-     * @param model      AI Model to use
-     * @return the response from the AI Assistant
-     */
-    public ChatbotResponse sendSimplePrompt(String userPrompt, String model) {
-        var chatHistory = new ChatHistory();
-        chatHistory.addUserMessage(userPrompt);
-        ChatCompletionService chatCompletionService = getChatCompletionService(openAIAsyncClient, model);
-        var response = chatCompletionService
-                .getChatMessageContentsAsync(chatHistory,
-                        getKernel(chatCompletionService),
-                        invocationContext).block();
-
-        var message = response.stream()
-                .map(messageContent -> messageContent.getContent())
-                .collect(Collectors.joining("\n"));
-
-        return new ChatbotResponse(message);
-    }
 
     /**
      * Send a prompt with history to Azure OpenAI.
@@ -59,15 +59,17 @@ public abstract class PromptService {
      * @return the response from the AI Assistant
      */
     public ChatbotResponse sendPromptWithHistory(String userPrompt, String model) {
-        var response = getKernel(getChatCompletionService(openAIAsyncClient, model))
-                .invokeAsync(getKernelTemplate())
-                .withArguments(getKernelFunctionArguments(chatHistory, userPrompt)).block();
+        this.chatHistory.addUserMessage(userPrompt);
 
-        // Add messages to history
-        chatHistory.addUserMessage(userPrompt);
-        chatHistory.addAssistantMessage(response.getResult());
+        ChatCompletionService chatCompletionService = getChatCompletionService(openAIAsyncClient, model);
+        var response = chatCompletionService
+                .getChatMessageContentsAsync(chatHistory,
+                        getCountryKernel(chatCompletionService, countryPlugin),
+                        invocationContext).block();
 
-        return new ChatbotResponse(response.getResult());
+        chatHistory.addAssistantMessage(response.get(0).toString());
+
+        return new ChatbotResponse(response.get(0).toString());
     }
 
     private KernelFunction<String> getKernelTemplate() {
@@ -82,5 +84,4 @@ public abstract class PromptService {
                 .withVariable("userPrompt", userPrompt)
                 .build();
     }
-
 }
