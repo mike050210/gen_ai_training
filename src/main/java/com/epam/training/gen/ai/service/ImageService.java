@@ -3,8 +3,8 @@ package com.epam.training.gen.ai.service;
 import com.epam.training.gen.ai.model.ImageMessageRequest;
 import com.epam.training.gen.ai.model.ImagePromptRequest;
 import com.epam.training.gen.ai.model.dial.ChatCompletionResponse;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,10 +18,17 @@ import java.util.Optional;
  * Service that handles the Text-to-image prompts.
  */
 @Service
-@RequiredArgsConstructor
 public class ImageService {
+
     private final WebClient webClient;
     private final WebClient.RequestBodySpec requestBodySpec;
+
+    public ImageService(
+            @Qualifier("dialWebClient") final WebClient webClient,
+            @Qualifier("dialBodySpec") final WebClient.RequestBodySpec requestBodySpec) {
+        this.webClient = webClient;
+        this.requestBodySpec = requestBodySpec;
+    }
 
     private static final String PATH_FILES_VERSION = "/v1/";
 
