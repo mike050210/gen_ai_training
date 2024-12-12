@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * Configuration class for setting up Azure OpenAI Async Client bean.
@@ -36,6 +37,23 @@ public class OpenAIConfiguration {
                 .endpoint(clientOpenAiProperties.clientOpenAiEndpoint())
                 .buildAsyncClient();
     }
+
+    @Bean
+    public WebClient webClient() {
+        return WebClient.builder()
+                .baseUrl(clientOpenAiProperties.clientOpenAiEndpoint())
+                .defaultHeader("Api-Key", clientOpenAiProperties.clientOpenAiKey())
+                .build();
+    }
+
+    @Bean
+    public WebClient.RequestBodySpec requestBodySpec(WebClient webClient) {
+        String endpoint = String.format("/openai/deployments/%s/chat/completions?api-version=2023-12-01-preview",
+                clientOpenAiProperties.clientOpenAiText2ImageModel());
+        return webClient.post().uri(endpoint);
+    }
+
+
 
     /**
      * Creates a {@link ChatHistory} instance of session scope that would store the Prompt History so that the AI
