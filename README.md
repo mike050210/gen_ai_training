@@ -16,7 +16,14 @@ Generative AI and how to implement solutions using the Java language.
 **Note:** You can modify the Gen-AI Settings like the temperature or the maximum
     tokens within the `application.properties` file.
 
-## REST Endpoints
+## Qdrant Vector DB Setup
+1. Install Rancher Desktop from
+   [this link](https://github.com/rancher-sandbox/rancher-desktop/releases).
+2. Run the command `docker compose up -d` and verify the following link to
+   validate the proper installation in the local environment:
+   [Qdrant Local Dahsboard](http://localhost:6333/dashboard).
+
+# REST Endpoints
 ### Simple Prompt
 _Request_
 ```
