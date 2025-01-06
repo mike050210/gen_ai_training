@@ -5,8 +5,10 @@ import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.aiservices.openai.chatcompletion.OpenAIChatCompletion;
 import com.microsoft.semantickernel.orchestration.InvocationContext;
 import com.microsoft.semantickernel.orchestration.PromptExecutionSettings;
+import com.microsoft.semantickernel.plugin.KernelPlugin;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -46,11 +48,28 @@ public class SemanticKernelConfiguration {
      * @param chatCompletionService to use as service
      * @return the {@link Kernel} instance
      */
-    @Bean
+    @Bean("simpleKernelBean")
+    @Qualifier("simpleKernelBean")
     @Scope(value = "prototype")
     public Kernel kernel(ChatCompletionService chatCompletionService) {
         return Kernel.builder()
                 .withAIService(ChatCompletionService.class, chatCompletionService)
+                .build();
+    }
+
+    /**
+     * Generates a {@link Kernel} bean to manage AI services that uses plugins.
+     *
+     * @param chatCompletionService to use as service
+     * @return the {@link Kernel} instance
+     */
+    @Bean("pluginKernelBean")
+    @Qualifier("pluginKernelBean")
+    @Scope(value = "prototype")
+    public Kernel kernelWithInventoryPlugin(ChatCompletionService chatCompletionService, KernelPlugin plugin) {
+        return Kernel.builder()
+                .withAIService(ChatCompletionService.class, chatCompletionService)
+                .withPlugin(plugin)
                 .build();
     }
 

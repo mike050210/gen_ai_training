@@ -11,5 +11,6 @@ public record ClientOpenAiProperties(
         String clientOpenAiEndpoint,
         String clientOpenAiDeploymentName,
         String clientOpenAiText2ImageModel,
-        GenAiSettings genAi) {
+        GenAiSettings genAi,
+        ApplicationProperties application) {
 }
