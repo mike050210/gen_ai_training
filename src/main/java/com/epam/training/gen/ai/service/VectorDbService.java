@@ -13,13 +13,12 @@ import io.qdrant.client.grpc.Points.ScoredPoint;
 import io.qdrant.client.grpc.Points.SearchPoints;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static io.qdrant.client.PointIdFactory.id;
@@ -42,18 +41,41 @@ public class VectorDbService {
     private final QdrantClient qdrantClient;
     private final ClientOpenAiProperties clientOpenAiProperties;
 
+    private static String RAG_COLLECTION_TYPE = "rag";
+    private static String EMBEDDING_COLLECTION_TYPE = "embedding";
+
+    private static Set<String> collectionTypes = Set.of(RAG_COLLECTION_TYPE, EMBEDDING_COLLECTION_TYPE);
+
     /**
      * Creates a new collection in Qdrant with specified vector parameters.
      *
-     * @throws ExecutionException   if the collection creation operation fails
-     * @throws InterruptedException if the thread is interrupted during execution
+     * @param collectionType collection type
+     * @throws ExecutionException      if the collection creation operation fails
+     * @throws InterruptedException    if the thread is interrupted during execution
+     * @throws ResponseStatusException if the collection type is invalid
      */
-    public void createCollection() throws ExecutionException, InterruptedException {
+    public void createCollection(String collectionType) throws ExecutionException, InterruptedException {
+        if (!collectionTypes.contains(collectionType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid 'collectionType' parameter value, valid types:  " + collectionTypes);
+        }
+
+        String collectionName;
+        int vectorSize;
+
+        if (RAG_COLLECTION_TYPE.equalsIgnoreCase(collectionType)) {
+            collectionName = clientOpenAiProperties.application().db().ragCollection();
+            vectorSize = clientOpenAiProperties.application().db().ragVectorSize();
+        } else {
+            collectionName = clientOpenAiProperties.application().db().collection();
+            vectorSize = clientOpenAiProperties.application().db().vectorSize();
+        }
+
         var result = qdrantClient.createCollectionAsync(
-                        clientOpenAiProperties.application().db().collection(),
+                        collectionName,
                         VectorParams.newBuilder()
                                 .setDistance(Collections.Distance.Cosine)
-                                .setSize(clientOpenAiProperties.application().db().vectorSize())
+                                .setSize(vectorSize)
                                 .build())
                 .get();
         log.info("Collection was created: [{}]", result.getResult());
@@ -67,7 +89,7 @@ public class VectorDbService {
      * @throws ExecutionException   if the vector saving operation fails
      * @throws InterruptedException if the thread is interrupted during execution
      */
-    public List<EmbeddingItem> persistEmbeddings(String text) throws ExecutionException, InterruptedException {
+    public List<EmbeddingItem> persistEmbeddings(String text, String collectionName) throws ExecutionException, InterruptedException {
         var embeddings = getEmbeddings(text);
         var points = new ArrayList<List<Float>>();
         embeddings.forEach(
@@ -82,7 +104,7 @@ public class VectorDbService {
             pointStructs.add(pointStruct);
         });
 
-        saveVector(pointStructs);
+        saveVector(pointStructs, collectionName);
 
         return embeddings;
     }
@@ -133,9 +155,9 @@ public class VectorDbService {
      * @throws InterruptedException if the thread is interrupted during execution
      * @throws ExecutionException   if the saving operation fails
      */
-    private void saveVector(ArrayList<PointStruct> pointStructs) throws InterruptedException, ExecutionException {
+    private void saveVector(ArrayList<PointStruct> pointStructs, String collectionName) throws InterruptedException, ExecutionException {
         var updateResult = qdrantClient
-                .upsertAsync(clientOpenAiProperties.application().db().collection(), pointStructs)
+                .upsertAsync(collectionName, pointStructs)
                 .get();
         log.info(updateResult.getStatus().name());
     }

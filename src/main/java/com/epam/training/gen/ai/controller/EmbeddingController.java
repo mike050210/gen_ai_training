@@ -1,6 +1,7 @@
 package com.epam.training.gen.ai.controller;
 
 import com.azure.ai.openai.models.EmbeddingItem;
+import com.epam.training.gen.ai.configuration.ClientOpenAiProperties;
 import com.epam.training.gen.ai.model.EmbeddingRequest;
 import com.epam.training.gen.ai.model.EmbeddingSearchItem;
 import com.epam.training.gen.ai.service.VectorDbService;
@@ -23,18 +24,20 @@ import java.util.concurrent.ExecutionException;
 @RequiredArgsConstructor
 public class EmbeddingController {
 
-    public final VectorDbService vectorDbService;
+    private final VectorDbService vectorDbService;
+    private final ClientOpenAiProperties clientOpenAiProperties;
 
     /**
      * Endpoint to create a new Qdrant collection.
      *
+     * @param collectionType collection type. I.e. 'rag' or 'embedding'
      * @return 200 Status code if successful
      * @throws ExecutionException   in case the execution fails
      * @throws InterruptedException in case an interruption happens
      */
     @PostMapping(value = "/collection")
-    public ResponseEntity<String> createNewCollection() throws ExecutionException, InterruptedException {
-        vectorDbService.createCollection();
+    public ResponseEntity<String> createNewCollection(@RequestParam String collectionType) throws ExecutionException, InterruptedException {
+        vectorDbService.createCollection(collectionType);
         return ResponseEntity.status(HttpStatus.CREATED).body("Collection created");
     }
 
@@ -65,7 +68,8 @@ public class EmbeddingController {
     @PostMapping()
     public ResponseEntity<List<EmbeddingItem>> saveEmbeddings(@RequestBody EmbeddingRequest request)
             throws ExecutionException, InterruptedException {
-        var embeddings = vectorDbService.persistEmbeddings(request.text());
+        var embeddings = vectorDbService.persistEmbeddings(
+                request.text(), clientOpenAiProperties.application().db().collection());
         return ResponseEntity.status(HttpStatus.CREATED).body(embeddings);
     }
 

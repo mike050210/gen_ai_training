@@ -71,7 +71,7 @@ _Response 2_
 }
 ```
 
-# Generate Images from text
+### Generate Images from text
 _Request_
 ```
 POST http://localhost:8080/api/ai-images
@@ -83,7 +83,7 @@ _Response_
 ![image](images/image_example.png)
 
 
-# Plugins
+### Plugins
 
 - Inventory plugin: Allows to manage an inventory stock.
 
@@ -132,4 +132,33 @@ _Response_
 {
     "response": "Mauritius, officially known as the Republic of Mauritius, is an island nation located in the Eastern Africa region of Africa. Here is some information about Mauritius:\n\n- Common Name: Mauritius\n- Official Name: Republic of Mauritius\n- Native Name: Maurice (French), Moris (Mauritian Creole)\n- Capital: Port Louis\n- Region: Africa\n- Subregion: Eastern Africa\n- Population: Approximately 1,265,740\n- Area: 2,040 square kilometers\n- Language: The official languages are English and French, with Mauritian Creole being widely spoken.\n- Currency: Mauritian Rupee (MUR)\n- Timezone: UTC+04:00\n- Calling Code: +230\n- Internet TLD: .mu\n- Flag: 🇲🇺\n\nIf you need more specific information or have any other questions, feel free to ask!"
 }
+```
+
+### RAG Queries
+_Request 1_
+```
+POST http://localhost:8080/api/rag-chat/documents
+One Hundred Years of Solitude (Spanish: Cien años de soledad, Latin American Spanish: [sjen ˈaɲos ðe soleˈðað]) is a 1967 novel by Colombian author Gabriel García Márquez that tells the multi-generational story of the Buendía family, whose patriarch, José Arcadio Buendía, founded the fictitious town of Macondo. The novel is often cited as one of the supreme achievements in world literature. It was recognized as one of the most important works of the Spanish language during the 4th International Conference of the Spanish Language held in Cartagena in March 2007.
+The magical realist style and thematic substance of the book established it as an important representative novel of the literary Latin American Boom of the 1960s and 1970s, which was stylistically influenced by Modernism (European and North American) and the Cuban Vanguardia (Avant-Garde) literary movement.
+Since it was first published in May 1967 in Buenos Aires by Editorial Sudamericana, the book has been translated into 46 languages and sold more than 50 million copies. The novel, considered García Márquez's magnum opus, remains widely acclaimed and is recognized as one of the most significant works both in the Hispanic literary canon and in world literature.
+```
+_Response 1_
+```
+Document added 
+```
+
+_Request 2_
+```
+POST http://localhost:8080/api/rag-chat/rag-prompt?maxResults=1
+Who wrote 100 years of solitude?
+```
+_Response 2_
+```json
+[
+  {
+    "id": "c56ccd82-a5b2-45dc-817a-c5f253883c07",
+    "score": 0.8186239,
+    "payload": "One Hundred Years of Solitude (Spanish: Cien años de soledad, Latin American Spanish: [sjen ˈaɲos ðe soleˈðað]) is a 1967 novel by Colombian author Gabriel García Márquez that tells the multi-generational story of the Buendía family, whose patriarch, José Arcadio Buendía, founded the fictitious town of Macondo."
+  }
+]
 ```
